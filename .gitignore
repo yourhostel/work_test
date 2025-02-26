@@ -31,3 +31,5 @@ build/
 
 ### VS Code ###
 .vscode/
+rest-postgres.tar
+rest-spring-app.tar
