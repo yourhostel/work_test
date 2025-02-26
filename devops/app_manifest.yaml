@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: springboot-app
+  namespace: work              # Ресурс створено в неймспейсі "work"
+  labels:
+    app: springboot
+spec:
+  replicas: 1                  # Запускаємо одну репліку
+  selector:
+    matchLabels:
+      app: springboot          # Вибір подів за міткою app=springboot
+  template:
+    metadata:
+      labels:
+        app: springboot        # Мітка, що додається до кожного поду
+    spec:
+      containers:
+        - name: springboot
+          image: rest-spring-app:latest
+          imagePullPolicy: IfNotPresent  # Використовує локальний образ, якщо він є
+          ports:
+            - containerPort: 8080        # Контейнер слухає порт 8080
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret  # Значення DATABASE_URL береться з сікрету
+                  key: DATABASE_URL
+            - name: DATABASE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret  # Значення DATABASE_USER береться з сікрету
+                  key: DATABASE_USER
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret  # Та значення DATABASE_PASSWORD також береться з сікрету
+                  key: DATABASE_PASSWORD
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: springboot-service
+  namespace: work          # Сервіс створено в неймспейсі "work"
+  labels:
+    app: springboot        # Сервіс обирає поди з міткою app=springboot
+spec:
+  selector:
+    app: springboot
+  ports:
+    - protocol: TCP
+      port: 8080           # Сервіс прослуховує порт 8080
+      targetPort: 8080     # Трафік направляється на порт 8080 в поді
+  type: ClusterIP          # Створюється внутрішній (ClusterIP) сервіс
+

@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: work                  # Ресурс створюється в неймспейсі "work"
+  labels:
+    app: postgres
+spec:
+  serviceName: "postgres-service"  # DNS-ім'я, яке буде використовуватись для доступу до Postgres з інших ресурсів
+  replicas: 1                      # Кількість реплік (подів) – один
+  selector:
+    matchLabels:
+      app: postgres                # Селектор, що відбирає поди з міткою app=postgres
+  template:
+    metadata:
+      labels:
+        app: postgres              # Мітка, яка присвоюється кожному створеному поду
+    spec:
+      containers:
+        - name: postgres
+          image: rest-postgres:latest
+          imagePullPolicy: IfNotPresent  # Використовує локальний образ, якщо він вже імпортований
+          ports:
+            - containerPort: 5432        # Контейнер слухає порт 5432 (стандартний для PostgreSQL)
+          env:
+            - name: POSTGRES_DB
+              value: "work_db"           # Ім'я бази даних, яка буде створена при ініціалізації
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret  # Сікрет, з якого буде взято значення користувача
+                  key: DATABASE_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret  # Сікрет, з якого буде взято значення пароля
+                  key: DATABASE_PASSWORD
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data # Точка монтування для збереження даних (persistency)
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-storage                    # Ім'я PVC, яке буде створено для кожного поду
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 1Gi                          # Запит на 1 ГБ сховища для бази даних
+---
+# Service для PostgreSQL
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: work                                 # Сервіс створюється в тому самому неймспейсі "work"
+  labels:
+    app: postgres
+spec:
+  selector:
+    app: postgres                                 # Сервіс вибирає поди з міткою app=postgres
+  ports:
+    - protocol: TCP
+      port: 5432                                  # Сервіс прослуховує порт 5432
+      targetPort: 5432                            # Направляє трафік до контейнера на порт 5432
+  clusterIP: None         # Headless-сервіс: використовується для DNS-резолвінгу StatefulSet (без виділеної IP-адреси)

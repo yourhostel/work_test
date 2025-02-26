@@ -5,7 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import work_test.model.Item;
-import work_test.servise.ItemService;
+import work_test.service.ItemService;
 
 import java.util.List;
 

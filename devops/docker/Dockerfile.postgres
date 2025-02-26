@@ -1,0 +1,13 @@
+# Dockerfile.postgres
+FROM postgres:latest
+
+# Встановлюємо змінні середовища (вони будуть перезаписані в K3s)
+ENV POSTGRES_DB=work_db
+ENV POSTGRES_USER=postgres
+ENV POSTGRES_PASSWORD=postgres
+
+# Перезаписуємо `pg_hba.conf`, дозволяючи підключення ззовні
+RUN echo "host all all 0.0.0.0/0 md5" >> /var/lib/postgresql/data/pg_hba.conf
+
+# Запускаємо PostgreSQL з вказаним `pg_hba.conf`
+CMD ["postgres", "-c", "listen_addresses=*"]
