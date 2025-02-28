@@ -1,0 +1,41 @@
+# work-chart/templates/deployment.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: springboot-app
+  namespace: work              # Ресурс створено в неймспейсі "work"
+  labels:
+    app: springboot
+spec:
+  replicas: {{ .Values.app.replicas }}  # Кількість реплік береться з values.yaml
+  selector:
+    matchLabels:
+      app: springboot
+  template:
+    metadata:
+      labels:
+        app: springboot
+    spec:
+      containers:
+        - name: springboot
+          image: "{{ .Values.app.image }}"  # Образ з values.yaml
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: {{ .Values.app.port }}  # Порт застосунку
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.global.secretName }}"
+                  key: "{{ .Values.app.databaseURL }}"
+            - name: DATABASE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.global.secretName }}"
+                  key: "{{ .Values.global.databaseUserKey }}"
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.global.secretName }}"
+                  key: "{{ .Values.global.databasePasswordKey }}"

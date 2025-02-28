@@ -1,0 +1,18 @@
+# work-chart/templates/values.yaml
+
+global:
+  secretName: "postgres-secret"  # Назва секрету
+  databaseUserKey: "DATABASE_USER"  # Ключ у секреті для користувача БД
+  databasePasswordKey: "DATABASE_PASSWORD"  # Ключ у секреті для пароля БД
+  databasePort: "5432"  # Порт для БД
+
+database:
+  name: "work_db"  # Назва БД
+  image: "rest-postgres:latest"  # Образ PostgreSQL
+  storage: 1Gi  # Розмір сховища
+
+app:
+  replicas: 1  # Кількість реплік застосунку
+  image: "rest-spring-app:latest"  # Образ Spring Boot застосунку
+  port: "8080"  # Порт, який слухає застосунок
+  databaseURL: "DATABASE_URL"

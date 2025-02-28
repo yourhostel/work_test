@@ -1,4 +1,28 @@
 
+```text
+work
+│── devops/
+│   ├── docker/
+│   │   ├── Dockerfile.app
+│   │   ├── Dockerfile.postgres
+│   ├── app_manifest.yaml
+│   ├── postgres_manifest.yaml
+│── src/
+│   └── main/
+│       ├── java/
+│       ├── resources/
+│           ├── application.properties  # Конфігураційний файл Spring Boot
+│── work-chart/
+│   ├── charts/ не 
+│   ├── templates/
+│   │   ├── deployment.yaml               # Deployment для Spring Boot
+│   │   ├── statefulset.yaml              # StatefulSet для PostgreSQL
+│   │   ├── service.yaml                   
+│   │   ├── secret.yaml                    
+│   ├── Chart.yaml
+│   ├── values.yaml
+│   ├── .helmignore
+```
 
 - Run postgres-test database
 ```bash
@@ -102,4 +126,45 @@ kubectl port-forward svc/springboot-service 8080:8080
 
 sudo lsof -i :8090
 sudo kill -9 <PID>
+```
+
+# Helm
+
+```bash
+# Install the Helm chart (first-time deployment)
+helm install work-chart ./work-chart
+
+# Check how Helm renders templates before applying them (useful for debugging)
+helm template work-chart ./work-chart | grep -A 5 "ports:"
+
+# Upgrade or install the Helm chart (deploys PostgreSQL & app)
+helm upgrade --install work-chart ./work-chart
+
+# Delete the running PostgreSQL pod (forces it to restart with new settings)
+kubectl delete pod -l app=postgres -n work
+
+# View logs of the running PostgreSQL pod (check for errors or success messages)
+kubectl logs -l app=postgres -n work
+
+helm uninstall work-chart
+```
+
+#### To start with the creation of a secret is the surest way
+
+
+### Secure way to create a Kubernetes secret
+
+The safest way to handle secrets is by using `read -s` (to avoid storing passwords in history) or a separate `secrets.yaml` file, which should be added to `.gitignore`.
+
+#### Using `read -s` to prevent password exposure in history
+```bash
+read -sp "Enter DB Password: " DB_PASSWORD
+helm install work-chart ./work-chart \
+  --set DATABASE_PASSWORD="$DB_PASSWORD" \
+  --set DATABASE_USER="myuser" \
+  --set DATABASE_URL="jdbc:postgresql://postgres-service:5432/work_db"
+```
+
+```bash
+helm get values work-chart
 ```

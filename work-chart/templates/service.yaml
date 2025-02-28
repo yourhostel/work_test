@@ -1,0 +1,35 @@
+# work-chart/templates/service.yaml
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: work
+  labels:
+    app: postgres
+spec:
+  selector:
+    app: postgres
+  ports:
+    - protocol: TCP
+      port: {{ .Values.global.databasePort | default 5432 }}   # Порт сервісу (береться з values.yaml)
+      targetPort: {{ .Values.global.databasePort | default 5432 }}
+  clusterIP: None  # Headless-сервіс для роботи StatefulSet (без виділеної IP-адреси)
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: springboot-service
+  namespace: work
+  labels:
+    app: springboot
+spec:
+  selector:
+    app: springboot
+  ports:
+    - protocol: TCP
+      port: {{ .Values.app.port }}   # Порт сервісу (береться з values.yaml)
+      targetPort: {{ .Values.app.port }}
+  type: ClusterIP  # Внутрішній сервіс для взаємодії в кластері

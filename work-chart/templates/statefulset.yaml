@@ -1,0 +1,53 @@
+# work-chart/templates/statefulset.yaml
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: work
+  labels:
+    app: postgres
+spec:
+  serviceName: "postgres-service"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: "{{ .Values.database.image }}"  # Образ з values.yaml
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: {{ .Values.global.databasePort }}  # Порт БД
+          env:
+            - name: POSTGRES_DB  # Змінна оточення, яку використовує PostgreSQL. Стандартна змінна
+                                 # Говорить контейнеру, яку БД створити при першому запуску
+              value: "{{ .Values.database.name }}"
+            - name: POSTGRES_USER  # Користувач PostgreSQL стандартна змінна
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.global.secretName }}"  # Назва секрету в k3s
+                  key: "{{ .Values.global.databaseUserKey }}" # Назначаємо користувача (з секрету k3s)
+            - name: POSTGRES_PASSWORD  # Пароль PostgreSQL стандартна змінна
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.global.secretName }}"  # Назва секрету в k3s
+                  key: "{{ .Values.global.databasePasswordKey }}" # Встановлюємо пароль з секрету k3s
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-storage
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: "{{ .Values.database.storage }}"
+
